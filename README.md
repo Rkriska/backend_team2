@@ -4,6 +4,8 @@ Backend pengolahan dokumen pengadaan dari **JSON hasil Document Extractor** samp
 
 > **Status:** implementasi prototype tersedia dan pemeriksaan sintaks Python lulus. Runtime end-to-end PostgreSQL–Qdrant–embedding–LLM belum diverifikasi. Endpoint pada bagian **Target Integration Contract** adalah spesifikasi antartim; belum semuanya tersedia dalam kode saat ini.
 
+> **Desain berikutnya sudah disepakati:** JSON ingestion canonical, document versioning, RAB relational, worker berbasis PostgreSQL, embedding `multilingual-e5-base`, dan integrasi melalui API tim VectorDB. Kode prototype belum direvisi. Baca [Ingestion Foundation Design](docs/superpowers/specs/2026-10-02-ingestion-foundation-design.md) dan [Backend Flow](BACKEND_FLOW.md).
+
 ## Daftar Isi
 
 1. [Scope Tim](#scope-tim)

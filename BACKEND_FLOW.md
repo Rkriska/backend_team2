@@ -1,5 +1,62 @@
 # Backend AITF — Ringkasan dan Flow
 
+> **Catatan status:** bagian awal dokumen ini menjelaskan prototype yang tersedia saat ini. Bagian **Pipeline Target yang Disepakati** menjelaskan desain berikutnya dan belum diimplementasikan.
+
+## Pipeline Target yang Disepakati
+
+Desain lengkap: [`docs/superpowers/specs/2026-10-02-ingestion-foundation-design.md`](docs/superpowers/specs/2026-10-02-ingestion-foundation-design.md).
+
+```text
+JSON Extractor ──────────┐
+                        ├── Canonical Ingestion Service
+Upload → JSON Adapter ───┘
+             │
+             ▼
+Validasi + idempotensi + document versioning
+             │
+             ▼
+PostgreSQL + durable ingestion job → 202 Accepted
+             │
+             ▼
+DB-backed worker
+      ┌──────┴─────────────┐
+      ▼                    ▼
+RAB relational         TOR narrative
+Rule engine            Chunk + E5 embedding
+Regulation version     VectorDB HTTP API
+      │                    │
+      └──────────┬─────────┘
+                 ▼
+        Screening 1 dan 2
+                 ▼
+          Human/ROCAN review
+```
+
+Keputusan arsitektur:
+
+- `POST /api/v1/ingestions` menjadi endpoint canonical.
+- Upload file hanya adapter menuju contract JSON yang sama.
+- PostgreSQL menjadi source of truth; VectorDB adalah indeks turunan.
+- RAB disimpan per row dan diperiksa secara deterministik.
+- TOR disimpan per versi/page/chunk sebelum dikirim ke VectorDB.
+- Worker memakai job PostgreSQL dengan lease, heartbeat, retry, dan recovery.
+- Backend membuat embedding `intfloat/multilingual-e5-base` 768 dimensi.
+- Backend memanggil API tim VectorDB; akses Qdrant langsung dihentikan dari business flow.
+- Regulasi berbeda tiap tahun memakai versioned rows, bukan tabel tahunan.
+- LLM memberi rekomendasi; keputusan akhir tetap milik manusia.
+
+Lifecycle target:
+
+```text
+ACCEPTED → VALIDATING → NORMALIZING → STORED
+  ├── RAB/SBM → RULE_EVALUATION → COMPLETED
+  └── TOR/ACUAN/KEPMEN → CHUNKING → EMBEDDING
+      → READY_FOR_VECTOR_DB → INDEXING
+      → INDEXED | PARTIALLY_INDEXED
+```
+
+---
+
 ## 1. Tujuan Sistem
 
 Backend AITF membantu memeriksa dokumen pengadaan, terutama **TOR** dan **RAB**, melalui dua tahap:
